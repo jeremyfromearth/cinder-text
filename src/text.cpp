@@ -57,6 +57,47 @@ void renderer::set_font(ci::Font f, std::string charset) {
   invalidated = true;
 }
 
+void renderer::set_style(ci::JsonTree style) {
+  if(style.hasChild("font")) {
+    if(style.hasChild("size")) {
+      set_font(style.getChild("font").getValue(), style.getChild("size").getValue<int>());
+    }
+  }
+  
+  if(style.hasChild("color")) {
+    ci::JsonTree c = style.getChild("color");
+    if(c.getNumChildren() >= 3) {
+      float r = c.getValueAtIndex<float>(0) / 255.0f;
+      float g = c.getValueAtIndex<float>(1) / 255.0f;
+      float b = c.getValueAtIndex<float>(2) / 255.0f;
+      if(c.getNumChildren() == 4) {
+        float a = c.getValueAtIndex<float>(3);
+        set_color(ci::ColorA(r, g, b, a));
+      } else {
+        set_color(ci::Color(r, g, b));
+      }
+    }
+  }
+  
+  if(style.hasChild("leading")) {
+    set_leading(style.getChild("leading").getValue<int>());
+  }
+  
+  if(style.hasChild("word-spacing")) {
+    set_word_spacing(style.getChild("word-spacing").getValue<int>());
+  }
+  
+  if(style.hasChild("max-width")) {
+    set_max_width(style.getChild("max-width").getValue<int>());
+  }
+  
+  if(style.hasChild("align")) {
+    std::string a = style.getChild("align").getValue();
+    if(a == "left") alignment = renderer::align::Left;
+    if(a == "right") alignment = renderer::align::Right;
+  }
+}
+
 void renderer::clear() {
   str = "";
   words.clear();

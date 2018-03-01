@@ -5,6 +5,7 @@
 
 // cinder
 #include "cinder/gl/gl.h"
+#include "cinder/Json.h"
 #include "cinder/gl/Texture.h"
 
 namespace text {
@@ -70,6 +71,8 @@ public:
     word_spacing = n;
     invalidated = true;
   }
+  
+  void set_style(ci::JsonTree style);
   
   void set_text(std::string s) {
     clear();
