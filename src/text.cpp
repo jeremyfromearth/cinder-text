@@ -19,6 +19,17 @@ const std::string renderer::default_charset =
   »ÅÍÎÏ˝ÓÔÒÚÆ¸˛Ç◊ı˜Â¯˘¿œ∑´†¥¨π“‘«åß∂ƒ© \
   ˙∆˚¬…æΩ≈ç√∫˜µ≤≥÷";
 
+renderer_ref renderer::create() {
+  return std::make_shared<renderer>();
+}
+
+renderer_ref renderer::create(std::string str, ci::Font f) {
+  auto r = std::make_shared<renderer>();
+  r->set_font(f);
+  r->set_text(str);
+  return r;
+}
+
 renderer::renderer() {
   str = "";
   leading = 0;
@@ -32,6 +43,11 @@ renderer::renderer() {
 
 void renderer::set_font(std::string path, int font_size, std::string charset) {
   ci::Font f = ci::Font(ci::app::loadAsset(path), font_size);
+  renderer::set_font(f, charset);
+  invalidated = true;
+}
+
+void renderer::set_font(ci::Font f, std::string charset) {
   font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format(), charset);
   invalidated = true;
 }

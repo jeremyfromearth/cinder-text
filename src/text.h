@@ -11,17 +11,6 @@ struct word {
   ~word() { text = ""; }
 };
 
-/*
-struct format {
-  int leading(int leading=0) {
-    l = leading;
-    //return *this;
-  }
-  
-  int l;
-}
-*/
-
 class renderer {
 public:
   ////////////////////////////////////////////////
@@ -30,8 +19,11 @@ public:
   enum align { Left, Right };
   static const std::string default_charset;
   
-  //typedef std::shared_ptr<text> text_ref;
-  //static text_ref create(std::string str, ci::FontRef font);
+  typedef std::shared_ptr<renderer> renderer_ref;
+  
+  static renderer_ref create();
+  
+  static renderer_ref create(std::string str, ci::Font font);
   
   ////////////////////////////////////////////////
   // ctr/dstr
@@ -56,6 +48,8 @@ public:
   void set_color(ci::ColorA c) { color = c; }
   
   void set_font(std::string path, int font_size, std::string charset=renderer::default_charset);
+  
+  void set_font(ci::Font f, std::string charset=renderer::default_charset);
   
   void set_leading(int l) {
     leading = l;
@@ -106,5 +100,6 @@ protected:
   align alignment;
   ci::gl::TextureFont::DrawOptions options;
 };
+typedef renderer::renderer_ref renderer_ref;
 }
 
