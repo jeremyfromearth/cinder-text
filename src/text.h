@@ -3,6 +3,7 @@
 // boost
 #include "boost/algorithm/string.hpp"
 
+namespace text {
 struct word {
   std::string text;
   ci::Rectf bounds;
@@ -10,7 +11,18 @@ struct word {
   ~word() { text = ""; }
 };
 
-class text {
+/*
+struct format {
+  int leading(int leading=0) {
+    l = leading;
+    //return *this;
+  }
+  
+  int l;
+}
+*/
+
+class renderer {
 public:
   ////////////////////////////////////////////////
   // static
@@ -18,12 +30,15 @@ public:
   enum align { Left, Right };
   static const std::string default_charset;
   
+  //typedef std::shared_ptr<text> text_ref;
+  //static text_ref create(std::string str, ci::FontRef font);
+  
   ////////////////////////////////////////////////
   // ctr/dstr
   ////////////////////////////////////////////////
-  text();
+  renderer();
   
-  ~text() { clear(); }
+  ~renderer() { clear(); }
   
   ////////////////////////////////////////////////
   // getter/setter
@@ -40,7 +55,7 @@ public:
   
   void set_color(ci::ColorA c) { color = c; }
   
-  void set_font(std::string path, int font_size, std::string charset=text::default_charset);
+  void set_font(std::string path, int font_size, std::string charset=renderer::default_charset);
   
   void set_leading(int l) {
     leading = l;
@@ -91,4 +106,5 @@ protected:
   align alignment;
   ci::gl::TextureFont::DrawOptions options;
 };
+}
 

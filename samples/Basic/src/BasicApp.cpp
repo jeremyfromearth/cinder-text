@@ -11,7 +11,7 @@ class BasicApp : public App {
   public:
 	void setup() override;
 	void draw() override;
-  text t;
+  text::renderer t;
 };
 
 void BasicApp::setup() {

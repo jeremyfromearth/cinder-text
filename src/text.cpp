@@ -9,7 +9,9 @@
 
 #include "text.h"
 
-const std::string text::default_charset =
+using namespace text;
+
+const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
   !`-=~!@#$%^&*()_+[]\{}|;':\",./<>?`¡ \
@@ -17,7 +19,7 @@ const std::string text::default_charset =
   »ÅÍÎÏ˝ÓÔÒÚÆ¸˛Ç◊ı˜Â¯˘¿œ∑´†¥¨π“‘«åß∂ƒ© \
   ˙∆˚¬…æΩ≈ç√∫˜µ≤≥÷";
 
-text::text() {
+renderer::renderer() {
   str = "";
   leading = 0;
   max_width = 512;
@@ -28,19 +30,19 @@ text::text() {
   options.clipVertical(false).clipHorizontal(false).pixelSnap(true);
 }
 
-void text::set_font(std::string path, int font_size, std::string charset) {
+void renderer::set_font(std::string path, int font_size, std::string charset) {
   ci::Font f = ci::Font(ci::app::loadAsset(path), font_size);
   font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format(), charset);
   invalidated = true;
 }
 
-void text::clear() {
+void renderer::clear() {
   str = "";
   words.clear();
   invalidated = true;
 }
 
-void text::draw() {
+void renderer::draw() {
   layout();
   ci::gl::enableAlphaBlending();
   ci::gl::pushMatrices();
@@ -51,7 +53,7 @@ void text::draw() {
   ci::gl::popMatrices();
 }
 
-void text::layout() {
+void renderer::layout() {
   // exit early if we can
   if(!invalidated) return;
   invalidated = false;
