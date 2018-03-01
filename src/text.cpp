@@ -5,8 +5,13 @@
 //  Created by jeremy on 2/28/18.
 //
 
+// std
 #include <stdio.h>
 
+// cinder
+#include "cinder/Log.h"
+
+// text
 #include "text.h"
 
 using namespace text;
@@ -60,13 +65,15 @@ void renderer::clear() {
 
 void renderer::draw() {
   layout();
-  ci::gl::enableAlphaBlending();
-  ci::gl::pushMatrices();
+  ci::gl::ScopedMatrices m1;
+  ci::gl::ScopedColor c;
+  ci::gl::ScopedBlendAlpha a;
+  ci::gl::enableAlphaBlendingPremult();
   for (int i = 0; i < words.size(); i++) {
     ci::gl::color(color);
     font->drawString(words[i].text, words[i].bounds, ci::vec2(), options);
   }
-  ci::gl::popMatrices();
+  ci::gl::disableAlphaBlending();
 }
 
 void renderer::layout() {
@@ -130,4 +137,36 @@ void renderer::layout() {
       }
     }
   }
+}
+
+ci::gl::TextureRef renderer::to_texture() {
+  layout();
+  // Not sure if this is a good idea or not
+  // If the size is invalid, the creation of the fbo will crash
+  // Return an empty texture instead?
+  int w = get_bounds().getWidth();
+  int h = get_bounds().getHeight();
+  if(w == 0 || h == 0) {
+    CI_LOG_W("Warning: Invalid size after call to layout");
+    return ci::gl::Texture::create(1, 1);
+  }
+  
+  ci::gl::Texture::Format tex_format;
+  tex_format.setMagFilter(GL_NEAREST);
+  tex_format.setMinFilter(GL_NEAREST);
+  
+  ci::gl::Fbo::Format fbo_format;
+  fbo_format.setSamples(16);
+  fbo_format.setColorTextureFormat(tex_format);
+  
+  
+  ci::gl::FboRef fbo = ci::gl::Fbo::create(w, h, fbo_format);
+  ci::gl::ScopedMatrices sm;
+  ci::gl::ScopedFramebuffer sf(fbo);
+  ci::gl::ScopedViewport sv(ci::ivec2(0), fbo->getSize());
+  ci::gl::setMatricesWindow(fbo->getSize());
+  ci::gl::ScopedBlendAlpha sa;
+  ci::gl::clear(ci::ColorA(0, 0, 0, 0));
+  draw();
+  return fbo->getColorTexture();
 }

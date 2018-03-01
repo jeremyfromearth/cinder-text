@@ -3,6 +3,10 @@
 // boost
 #include "boost/algorithm/string.hpp"
 
+// cinder
+#include "cinder/gl/gl.h"
+#include "cinder/gl/Texture.h"
+
 namespace text {
 struct word {
   std::string text;
@@ -81,6 +85,8 @@ public:
   void draw();
   
   void layout();
+  
+  ci::gl::TextureRef to_texture();
 
 protected:
   
