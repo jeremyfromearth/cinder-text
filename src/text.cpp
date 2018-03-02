@@ -19,20 +19,12 @@ using namespace text;
 const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
-  !`-=~!@#$%^&*()_+[]\{}|;':\",./<>?`¡ \
-  ™£¢∞§¶•ªº–≠`⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰ˇÁ¨ˆØ∏”’ \
-  »ÅÍÎÏ˝ÓÔÒÚÆ¸˛Ç◊ı˜Â¯˘¿œ∑´†¥¨π“‘«åß∂ƒ© \
-  ˙∆˚¬…æΩ≈ç√∫˜µ≤≥÷";
+  !$%&()-+=;:'\"[],./?";
+
+std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> renderer::font_cache;
 
 renderer_ref renderer::create() {
   return std::make_shared<renderer>();
-}
-
-renderer_ref renderer::create(std::string str, ci::Font f) {
-  auto r = std::make_shared<renderer>();
-  r->set_font(f);
-  r->set_text(str);
-  return r;
 }
 
 renderer::renderer() {
@@ -47,17 +39,19 @@ renderer::renderer() {
 }
 
 void renderer::set_font(std::string path, int font_size, std::string charset) {
-  ci::Font f = ci::Font(ci::app::loadAsset(path), font_size);
-  renderer::set_font(f, charset);
+  auto p = std::make_pair(path, font_size);
+  if(renderer::font_cache.count(p) != 0) {
+    font = renderer::font_cache.at(p);
+  } else {
+    ci::Font f = ci::Font(ci::app::loadAsset(path), font_size);
+    font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format(), charset);
+    renderer::font_cache.emplace(std::make_pair(p, font));
+  }
+  
   invalidated = true;
 }
 
-void renderer::set_font(ci::Font f, std::string charset) {
-  font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format(), charset);
-  invalidated = true;
-}
-
-void renderer::set_style(ci::JsonTree style) {
+void renderer::set_style(const ci::JsonTree & style) {
   if(style.hasChild("font")) {
     if(style.hasChild("size")) {
       set_font(style.getChild("font").getValue(), style.getChild("size").getValue<int>());
@@ -132,6 +126,7 @@ void renderer::layout() {
   // iterate through each word in the string and create a bounding box for it
   for (int i = 0; i < parts.size(); i++) {
     ci::Rectf word_bounds;
+    
     ci::vec2 size = font->measureString(parts[i]);
     
     if(coords.x + size.x > max_width) {
@@ -197,9 +192,8 @@ ci::gl::TextureRef renderer::to_texture() {
   tex_format.setMinFilter(GL_NEAREST);
   
   ci::gl::Fbo::Format fbo_format;
-  fbo_format.setSamples(16);
+  fbo_format.setSamples(4);
   fbo_format.setColorTextureFormat(tex_format);
-  
   
   ci::gl::FboRef fbo = ci::gl::Fbo::create(w, h, fbo_format);
   ci::gl::ScopedMatrices sm;
@@ -209,5 +203,7 @@ ci::gl::TextureRef renderer::to_texture() {
   ci::gl::ScopedBlendAlpha sa;
   ci::gl::clear(ci::ColorA(0, 0, 0, 0));
   draw();
-  return fbo->getColorTexture();
+  ci::gl::TextureRef t = fbo->getColorTexture();
+  return t;
+  
 }

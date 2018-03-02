@@ -1,4 +1,6 @@
 #pragma once
+// std
+#include <map>
 
 // boost
 #include "boost/algorithm/string.hpp"
@@ -28,7 +30,7 @@ public:
   
   static renderer_ref create();
   
-  static renderer_ref create(std::string str, ci::Font font);
+  static std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> font_cache;
   
   ////////////////////////////////////////////////
   // ctr/dstr
@@ -54,8 +56,6 @@ public:
   
   void set_font(std::string path, int font_size, std::string charset=renderer::default_charset);
   
-  void set_font(ci::Font f, std::string charset=renderer::default_charset);
-  
   void set_leading(int l) {
     leading = l;
     invalidated = true;
@@ -72,7 +72,7 @@ public:
     invalidated = true;
   }
   
-  void set_style(ci::JsonTree style);
+  void set_style(const ci::JsonTree & style);
   
   void set_text(std::string s) {
     clear();
