@@ -19,7 +19,7 @@ using namespace text;
 const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
-  !$%&()-+=;:'\"[],./?";
+  !$%&()-+=;:'\"[],./?–—";
 
 std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> renderer::font_cache;
 
@@ -28,14 +28,20 @@ renderer_ref renderer::create() {
 }
 
 renderer::renderer() {
-  str = "";
   leading = 0;
   max_width = 512;
   word_spacing = 8;
+  block_spacing = 32;
   alignment = Left;
   invalidated = true;
   color = ci::Color::black();
   options.clipVertical(false).clipHorizontal(false).pixelSnap(true);
+}
+
+void renderer::append(std::string s) {
+  std::vector<std::string> parts;
+  boost::split(parts, s, boost::is_any_of("\n\r"));
+  blocks.insert(blocks.end(), parts.begin(), parts.end());
 }
 
 void renderer::set_font(std::string path, int font_size, std::string charset) {
@@ -93,8 +99,8 @@ void renderer::set_style(const ci::JsonTree & style) {
 }
 
 void renderer::clear() {
-  str = "";
   words.clear();
+  blocks.clear();
   invalidated = true;
 }
 
@@ -115,37 +121,44 @@ void renderer::layout() {
   // exit early if we can
   if(!invalidated) return;
   invalidated = false;
-  std::vector<std::string> parts;
-  boost::split(parts, str, boost::is_any_of(" "));
-
+  
+  
+  ci::vec2 size;
   ci::vec2 coords(0, 0);
-  std::vector<std::vector<word>> lines;
-  lines.push_back(std::vector<word>());
   bounds.set(0.0f, 0.0f, 0.0f, 0.0f);
-
-  // iterate through each word in the string and create a bounding box for it
-  for (int i = 0; i < parts.size(); i++) {
-    ci::Rectf word_bounds;
+  std::vector<std::vector<word>> lines;
+  
+  for(auto & b: blocks) {
+    std::vector<std::string> parts;
+    lines.push_back(std::vector<word>());
+    boost::split(parts, b, boost::is_any_of(" "));
     
-    ci::vec2 size = font->measureString(parts[i]);
-    
-    if(coords.x + size.x > max_width) {
-      coords.x = 0;
-      coords.y += size.y + leading;
-      lines.push_back(std::vector<word>());
-    }
-    
-    word w(parts[i],
-      ci::Rectf(
+    // iterate through each word in the string and create a bounding box for it
+    for (int i = 0; i < parts.size(); i++) {
+      ci::Rectf word_bounds;
+      
+      size = font->measureString(parts[i]);
+      
+      if(coords.x + size.x > max_width) {
+        coords.x = 0;
+        coords.y += size.y + leading;
+        lines.push_back(std::vector<word>());
+      }
+      
+      word w(parts[i], ci::Rectf(
         coords.x, coords.y, coords.x + size.x,
         coords.y + size.y + leading
       ));
+      
+      coords.x += size.x + word_spacing;
+      bounds.include(ci::vec2(coords.x - word_spacing, 0));
+      
+      lines[lines.size() - 1].push_back(w);
+      words.push_back(w);
+    }
     
-    coords.x += size.x + word_spacing;
-    bounds.include(ci::vec2(coords.x - word_spacing, 0));
-    
-    lines[lines.size() - 1].push_back(w);
-    words.push_back(w);
+    coords.x = 0;
+    coords.y += size.y + block_spacing;
   }
 
    // remove leading from the bounding boxes of the last line of words
@@ -187,6 +200,7 @@ ci::gl::TextureRef renderer::to_texture() {
     return ci::gl::Texture::create(1, 1);
   }
   
+  // TODO: Make these format objects static, no need to re-create them every time
   ci::gl::Texture::Format tex_format;
   tex_format.setMagFilter(GL_NEAREST);
   tex_format.setMinFilter(GL_NEAREST);

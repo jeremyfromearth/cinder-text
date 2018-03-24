@@ -11,6 +11,6 @@ Cinder ships with three classes for drawing text. Below is a feature matrix for 
 |TextBox    | yes    |no     |no        |yes       |yes        |no         |yes       |no            |yes      |l,r,c    |
 |TextLayout | no     |yes    |no        |no        |yes        |yes        |no        |yes           |yes      |l,r,c    |
 |TextureFont| yes    |no     |no        |yes       |no         |no         |no        |no            |yes      |none     |
-|CinderText | yes    |yes    |yes       |yes       |no         |no         |yes       |no            |yes      |l,r      |
+|CinderText | yes    |yes    |yes       |yes       |yes        |yes        |yes       |no            |yes      |l,r      |
 
 

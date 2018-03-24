@@ -50,6 +50,8 @@ public:
   
   ci::Rectf get_bounds() { return bounds; }
   
+  void set_block_spacing(int n) { block_spacing = n; }
+  
   void set_color(ci::Color c) { color = ci::ColorA(c, 1.0); }
   
   void set_color(ci::ColorA c) { color = c; }
@@ -76,12 +78,14 @@ public:
   
   void set_text(std::string s) {
     clear();
-    str = s;
+    boost::split(blocks, s, boost::is_any_of("\n\r"));
   }
   
   ////////////////////////////////////////////////
   // methods
   ////////////////////////////////////////////////
+  
+  void append(std::string s);
   
   void clear();
   
@@ -93,18 +97,19 @@ public:
 
 protected:
   
-  std::string str;
   std::vector<word> words;
   
   int leading;
   int max_width;
   int word_spacing;
+  int block_spacing;
   bool invalidated;
   
   ci::ColorA color;
   
   ci::Rectf bounds;
   ci::gl::TextureFontRef font;
+  std::vector<std::string> blocks;
   
   align alignment;
   ci::gl::TextureFont::DrawOptions options;
