@@ -19,7 +19,7 @@ using namespace text;
 const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
-  !$%&()-+=;:'\"[],./?–—";
+  !$%&()-+=;:'\"[],./?–—”“";
 
 std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> renderer::font_cache;
 
@@ -58,10 +58,8 @@ void renderer::set_font(std::string path, int font_size, std::string charset) {
 }
 
 void renderer::set_style(const ci::JsonTree & style) {
-  if(style.hasChild("font")) {
-    if(style.hasChild("size")) {
-      set_font(style.getChild("font").getValue(), style.getChild("size").getValue<int>());
-    }
+  if(style.hasChild("font") && style.hasChild("size")) {
+    set_font(style.getChild("font").getValue(), style.getChild("size").getValue<int>());
   }
   
   if(style.hasChild("color")) {
@@ -106,20 +104,18 @@ void renderer::clear() {
 
 void renderer::draw() {
   layout();
-  ci::gl::ScopedMatrices m1;
   ci::gl::ScopedColor c;
   ci::gl::ScopedBlendAlpha a;
-  ci::gl::enableAlphaBlendingPremult();
+  ci::gl::ScopedBlendPremult pre;
   for (int i = 0; i < words.size(); i++) {
     ci::gl::color(color);
     font->drawString(words[i].text, words[i].bounds, ci::vec2(), options);
   }
-  ci::gl::disableAlphaBlending();
 }
 
-void renderer::layout() {
+std::vector<word> renderer::layout() {
   // exit early if we can
-  if(!invalidated) return;
+  if(!invalidated) return words;
   invalidated = false;
   
   
@@ -136,7 +132,6 @@ void renderer::layout() {
     // iterate through each word in the string and create a bounding box for it
     for (int i = 0; i < parts.size(); i++) {
       ci::Rectf word_bounds;
-      
       size = font->measureString(parts[i]);
       
       if(coords.x + size.x > max_width) {
@@ -186,6 +181,8 @@ void renderer::layout() {
       }
     }
   }
+  
+  return words;
 }
 
 ci::gl::TextureRef renderer::to_texture() {
@@ -195,6 +192,7 @@ ci::gl::TextureRef renderer::to_texture() {
   // Return an empty texture instead?
   int w = get_bounds().getWidth();
   int h = get_bounds().getHeight();
+  
   if(w == 0 || h == 0) {
     CI_LOG_W("Warning: Invalid size after call to layout");
     return ci::gl::Texture::create(1, 1);
@@ -206,7 +204,7 @@ ci::gl::TextureRef renderer::to_texture() {
   tex_format.setMinFilter(GL_NEAREST);
   
   ci::gl::Fbo::Format fbo_format;
-  fbo_format.setSamples(4);
+  fbo_format.setSamples(2);
   fbo_format.setColorTextureFormat(tex_format);
   
   ci::gl::FboRef fbo = ci::gl::Fbo::create(w, h, fbo_format);
@@ -215,9 +213,9 @@ ci::gl::TextureRef renderer::to_texture() {
   ci::gl::ScopedViewport sv(ci::ivec2(0), fbo->getSize());
   ci::gl::setMatricesWindow(fbo->getSize());
   ci::gl::ScopedBlendAlpha sa;
+  ci::gl::ScopedBlendPremult pre;
   ci::gl::clear(ci::ColorA(0, 0, 0, 0));
   draw();
-  ci::gl::TextureRef t = fbo->getColorTexture();
-  return t;
+  return fbo->getColorTexture();
   
 }

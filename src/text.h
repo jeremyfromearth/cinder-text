@@ -91,7 +91,7 @@ public:
   
   void draw();
   
-  void layout();
+  std::vector<word> layout();
   
   ci::gl::TextureRef to_texture();
 
