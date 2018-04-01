@@ -19,7 +19,7 @@ using namespace text;
 const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
-  !$%&()-+=;:'\"[],./?–—”“";
+  !$%&()-+=;:'\"[],./?–—”“…";
 
 std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> renderer::font_cache;
 
@@ -31,7 +31,7 @@ renderer::renderer() {
   leading = 0;
   max_width = 512;
   word_spacing = 8;
-  block_spacing = 32;
+  paragraph_spacing = 16;
   alignment = Left;
   invalidated = true;
   color = ci::Color::black();
@@ -50,7 +50,7 @@ void renderer::set_font(std::string path, int font_size, std::string charset) {
     font = renderer::font_cache.at(p);
   } else {
     ci::Font f = ci::Font(ci::app::loadAsset(path), font_size);
-    font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format(), charset);
+    font = ci::gl::TextureFont::create(f, ci::gl::TextureFont::Format().enableMipmapping(true), charset);
     renderer::font_cache.emplace(std::make_pair(p, font));
   }
   
@@ -58,6 +58,8 @@ void renderer::set_font(std::string path, int font_size, std::string charset) {
 }
 
 void renderer::set_style(const ci::JsonTree & style) {
+  invalidated = true;
+  
   if(style.hasChild("font") && style.hasChild("size")) {
     set_font(style.getChild("font").getValue(), style.getChild("size").getValue<int>());
   }
@@ -94,6 +96,10 @@ void renderer::set_style(const ci::JsonTree & style) {
     if(a == "left") alignment = renderer::align::Left;
     if(a == "right") alignment = renderer::align::Right;
   }
+  
+  if(style.hasChild("paragraph-spacing")) {
+    set_paragraph_spacing(style.getValueForKey<int>("paragraph-spacing"));
+  }
 }
 
 void renderer::clear() {
@@ -104,11 +110,9 @@ void renderer::clear() {
 
 void renderer::draw() {
   layout();
-  ci::gl::ScopedColor c;
-  ci::gl::ScopedBlendAlpha a;
+  ci::gl::ScopedColor c(color);
   ci::gl::ScopedBlendPremult pre;
   for (int i = 0; i < words.size(); i++) {
-    ci::gl::color(color);
     font->drawString(words[i].text, words[i].bounds, ci::vec2(), options);
   }
 }
@@ -117,7 +121,6 @@ std::vector<word> renderer::layout() {
   // exit early if we can
   if(!invalidated) return words;
   invalidated = false;
-  
   
   ci::vec2 size;
   ci::vec2 coords(0, 0);
@@ -152,34 +155,30 @@ std::vector<word> renderer::layout() {
       words.push_back(w);
     }
     
+    // offset each word by the difference of the max-width
+    // and the end of the last word in a line
+    if(alignment == Right) {
+      words.clear();
+      for(auto & l: lines) {
+        if(l.size()) {
+          auto & last = l[l.size() -1];
+          float diff = max_width - last.bounds.x2;
+          for(auto & w : l) {
+            w.bounds.offset({diff, 0});
+            words.push_back(w);
+          }
+        }
+      }
+    }
+    
     coords.x = 0;
-    coords.y += size.y + block_spacing;
+    coords.y += size.y + paragraph_spacing;
   }
 
    // remove leading from the bounding boxes of the last line of words
   for(auto & word : lines[lines.size()-1]) {
     word.bounds -= ci::vec2(0, leading);
     bounds.include(word.bounds);
-  }
-
-  // offset lines to be right aligned
-  if (alignment == Right) {
-    words.clear();
-    for (int i = 0; i < lines.size(); i++) {
-      float width = 0;
-      for (int j = 0; j < lines[i].size(); j++) {
-        width += lines[i][j].bounds.getWidth();
-      }
-      
-      width += word_spacing * lines[i].size();
-      width -= word_spacing;
-      
-      float offset = std::max(0.0f, (float)max_width - width);
-      for (int j = 0; j < lines[i].size(); j++) {
-        lines[i][j].bounds.offset(ci::vec2(offset, 0.0f));
-        words.push_back(lines[i][j]);
-      }
-    }
   }
   
   return words;
@@ -212,8 +211,6 @@ ci::gl::TextureRef renderer::to_texture() {
   ci::gl::ScopedFramebuffer sf(fbo);
   ci::gl::ScopedViewport sv(ci::ivec2(0), fbo->getSize());
   ci::gl::setMatricesWindow(fbo->getSize());
-  ci::gl::ScopedBlendAlpha sa;
-  ci::gl::ScopedBlendPremult pre;
   ci::gl::clear(ci::ColorA(0, 0, 0, 0));
   draw();
   return fbo->getColorTexture();

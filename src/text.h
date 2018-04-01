@@ -50,7 +50,7 @@ public:
   
   ci::Rectf get_bounds() { return bounds; }
   
-  void set_block_spacing(int n) { block_spacing = n; }
+  void set_paragraph_spacing(int n) { paragraph_spacing = n; }
   
   void set_color(ci::Color c) { color = ci::ColorA(c, 1.0); }
   
@@ -102,7 +102,7 @@ protected:
   int leading;
   int max_width;
   int word_spacing;
-  int block_spacing;
+  int paragraph_spacing;
   bool invalidated;
   
   ci::ColorA color;

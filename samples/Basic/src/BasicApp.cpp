@@ -61,6 +61,7 @@ void BasicApp::draw() {
   gl::draw(tex);
   
   // Compare with the cinder::TextBox
+  gl::color(1, 1, 1);
   gl::translate(0, tex->getBounds().getHeight());
   ci::gl::drawSolidRect(tb_texture->getBounds());
   gl::draw(tb_texture);
