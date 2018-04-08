@@ -19,7 +19,7 @@ using namespace text;
 const std::string renderer::default_charset =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
   abcdefghijklmnopqrstuvwxyz0123456789 \
-  !$%&()-+=;:'\"[],./?–—”“…";
+  !$%&()-+=;:'\"[],./?–—”“…↑↓’";
 
 std::map<std::pair<std::string, int>, ci::gl::TextureFontRef> renderer::font_cache;
 
@@ -28,6 +28,7 @@ renderer_ref renderer::create() {
 }
 
 renderer::renderer() {
+  debug = false;
   leading = 0;
   max_width = 512;
   word_spacing = 8;
@@ -135,7 +136,9 @@ std::vector<word> renderer::layout() {
     // iterate through each word in the string and create a bounding box for it
     for (int i = 0; i < parts.size(); i++) {
       ci::Rectf word_bounds;
-      size = font->measureString(parts[i]);
+      ci::vec2 new_size = font->measureString(parts[i]);
+      size.x = new_size.x;
+      size.y = fmax(new_size.y, size.y);
       
       if(coords.x + size.x > max_width) {
         coords.x = 0;
