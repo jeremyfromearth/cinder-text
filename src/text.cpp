@@ -2,7 +2,7 @@
 //  text.cpp
 //  Basic
 //
-//  Created by jeremy on 2/28/18.
+//  Created by jeremy on 2/28/18
 //
 
 // std

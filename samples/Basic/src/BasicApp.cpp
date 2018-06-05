@@ -27,7 +27,7 @@ void BasicApp::setup() {
   t->set_font("DroidSansMono.ttf", 16);
   t->set_max_width(512);
   t->set_leading(0);
-  t->set_block_spacing(0);
+  t->set_paragraph_spacing(0);
   t->set_word_spacing(6);
   t->set_text(str1);
   t->append(str2);
